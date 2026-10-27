@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {fresh,normalizeDraft} from './model.js';
+import {fitSignals,careerFamilies} from './careers.js';
+import {buildPrompt} from './prompt.js';
+import {evaluate} from './engine.js';
+test('职业类别不自动填写需求或修改评分',()=>{const s=fresh();const before=evaluate(s.profile,s.offers)[0];s.offers[0].careerFamily='sales';const after=evaluate(s.profile,s.offers)[0];assert.equal(before.score,after.score);assert.equal(s.offers[0].demand_persuasion,'');assert.ok(buildPrompt(s).includes('提成按签约还是回款'));});
+test('高频任务与不愿意形成讨论提示，而非能力差距分',()=>{const s=fresh();s.profile.wish_public='1';s.profile.ability_public='5';s.offers[0].demand_public='5';const signal=fitSignals(s.profile,s.offers[0]).find(x=>x.维度==='公开表达与镜头');assert.equal(signal.提示,'偏好冲突待讨论');assert.equal(signal.能力自述,5);});
+test('未知个人偏好不自动解释为冲突或中等',()=>{const s=fresh();s.offers[0].demand_detail='5';const signal=fitSignals(s.profile,s.offers[0]).find(x=>x.维度==='细节与规范');assert.equal(signal.提示,'待补充');assert.equal(signal.愿意程度,'未知');});
+test('个人证据、岗位任务及类别可导入恢复，并进入 Prompt',()=>{const s=fresh();s.profile.wish_writing='5';s.profile.ability_writing='3';s.profile.evidence_writing='校刊编辑与术语表整理';s.offers[0].careerFamily='translation';s.offers[0].demand_writing='4';s.offers[0].roleSupport='双人审校';const r=normalizeDraft(s);assert.equal(r.profile.evidence_writing,'校刊编辑与术语表整理');const prompt=buildPrompt(r);for(const value of ['翻译 / 本地化','校刊编辑与术语表整理','双人审校','人岗任务匹配'])assert.ok(prompt.includes(value));});
+test('教育金融运营等职业保持细分方向核实提示',()=>{for(const key of ['education','finance','operations','functions'])assert.ok(careerFamilies.find(([id])=>id===key)[4].length>=2);});

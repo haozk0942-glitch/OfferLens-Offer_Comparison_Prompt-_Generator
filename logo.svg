@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="green" x1="64" y1="6" x2="64" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B6ED75"/>
+      <stop offset=".32" stop-color="#55CD83"/>
+      <stop offset=".65" stop-color="#1B9E72"/>
+      <stop offset="1" stop-color="#125747"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="64" y1="18" x2="64" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EBFFC0" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#6AE0AB" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+  <!-- Four identical rounded arms; geometry is symmetric about both axes. -->
+  <path fill="url(#green)" fill-rule="evenodd" d="M64 6C70 6 73 31 85 43S122 58 122 64 97 73 85 85 70 122 64 122 55 97 43 85 6 70 6 64 31 55 43 43 58 6 64 6ZM64 47 47 64 64 81 81 64Z"/>
+  <path fill="url(#facet)" d="M64 11V47L47 64H11C26 61 38 56 46 46S59 26 64 11ZM117 64H81L64 81V117C69 101 73 91 83 83S101 69 117 64Z"/>
+</svg>

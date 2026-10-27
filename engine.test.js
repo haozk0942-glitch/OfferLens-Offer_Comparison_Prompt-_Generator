@@ -1,0 +1,16 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { evaluate } from './engine.js';
+const p={city:'杭州',minMonthly:10000,targetMonthly:15000,maxHours:50,weights:{money:4,content:4,growth:5,style:3,life:4,risk:3}};
+const a={id:'a',name:'A',city:'杭州',salary:15000,months:12,hours:40,content:4,growth:4,style:4,life:4,risk:4};
+test('高收入不能抵消城市底线',()=>{const r=evaluate(p,[{...a,city:'上海',salary:50000}])[0];assert.equal(r.eligible,false);assert.equal(r.gates.length,1);});
+test('缺失信息不会自动填中等分',()=>{const r=evaluate(p,[{...a,growth:''}])[0];assert.equal(r.contributions.find(c=>c.key==='growth').utility,null);assert.ok(r.coverage<100);assert.ok(r.high>r.low);});
+test('新增无关选项不会改变已有机会得分',()=>{assert.equal(evaluate(p,[a])[0].score,evaluate(p,[a,{...a,salary:100000}])[0].score);});
+test('未知工时使底线处于待确认',()=>{const r=evaluate(p,[{...a,hours:''}])[0];assert.equal(r.eligible,false);assert.equal(r.gates.length,0);});
+test('浮动奖金不计入保证收入和经济得分',()=>{const [r,s]=evaluate(p,[a,{...a,bonus:1000000}]);assert.equal(r.annual,180000);assert.equal(r.score,s.score);});
+test('完全未知时不产生参考分',()=>{const r=evaluate(p,[{city:'',salary:'',months:12,hours:''}])[0];assert.equal(r.score,null);assert.equal(r.coverage,0);assert.equal(r.low,0);assert.equal(Math.round(r.high),100);});
+test('多城市接受任意一个，兼容市后缀',()=>{const r=evaluate({...p,cities:['上海市','杭州市']},[a])[0];assert.equal(r.eligible,true);});
+test('国内外派按实际外派地点检查城市',()=>{const r=evaluate({...p,cities:['杭州市'],acceptAssignment:'yes'},[{...a,assignment:'domestic',assignmentDestination:'上海市',assignmentAcceptance:'yes'}])[0];assert.ok(r.gates.some(x=>x.includes('城市')));});
+test('海外地点与国内城市不混为冲突，单独检查接受意愿',()=>{const r=evaluate({...p,cities:['杭州市'],acceptAssignment:'yes',acceptOverseas:'no'},[{...a,assignment:'overseas',assignmentDestination:'新加坡',assignmentAcceptance:'yes'}])[0];assert.ok(r.gates.some(x=>x.includes('海外')));assert.ok(!r.gates.some(x=>x.includes('城市不满足')));});
+test('有条件接受外派不能当作已满足',()=>{const r=evaluate({...p,acceptAssignment:'conditional'},[{...a,assignment:'domestic',assignmentDestination:'杭州市',assignmentAcceptance:'yes'}])[0];assert.equal(r.eligible,false);assert.ok(r.unknown.some(x=>x.includes('外派')));});
+test('出差不能超过用户频率上限',()=>{const r=evaluate({...p,travelTolerance:'rare'},[{...a,travel:'yes',travelFrequency:'weekly'}])[0];assert.ok(r.gates.some(x=>x.includes('出差频率')));});
